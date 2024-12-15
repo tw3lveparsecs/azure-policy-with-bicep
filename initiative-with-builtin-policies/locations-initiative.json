@@ -1,0 +1,36 @@
+{
+  "name": "locations-initiative",
+  "displayName": "Allowed resource locations initiative",
+  "description": "Policy for restricting the deployment locations.",
+  "parameters": {
+    "listOfAllowedLocations": {
+      "type": "Array",
+      "metadata": {
+        "description": "The list of locations that can be specified when deploying resources.",
+        "strongType": "location",
+        "displayName": "Allowed locations"
+      },
+      "defaultValue": ["australiaeast", "australiasoutheast"]
+    }
+  },
+  "policyDefinitions": [
+    {
+      "policyDefinitionReferenceId": "Allowed locations",
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c",
+      "parameters": {
+        "listOfAllowedLocations": {
+          "value": "[parameters('listOfAllowedLocations')]"
+        }
+      }
+    },
+    {
+      "policyDefinitionReferenceId": "Allowed locations for resource groups",
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/e765b5de-1225-4ba3-bd56-1ac6695af988",
+      "parameters": {
+        "listOfAllowedLocations": {
+          "value": "[parameters('listOfAllowedLocations')]"
+        }
+      }
+    }
+  ]
+}
