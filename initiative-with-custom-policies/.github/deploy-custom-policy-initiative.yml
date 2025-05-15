@@ -1,0 +1,84 @@
+name: Custom Policy Initiative Deployment
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "policy-initiatives/**"
+      - "bicep-templates/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "policy-initiatives/**"
+      - "bicep-templates/**"
+
+env:
+  initiative_template: initiative-with-custom-policies/policy-initiatives/security-initiative.bicep
+  initiative_template_parameter: initiative-with-custom-policies/policy-initiatives/security-initiative.bicepparam
+  management_group_id: "<MANAGEMENT_GROUP_ID>"
+  oidc_app_reg_client_id: "<OIDC_APP_REG_CLIENT_ID>"
+  azure_tenant_id: "<AZURE_TENANT_ID>"
+  environment: "<ENVIRONMENT>"
+  location: australiaeast
+  deployment_name_initiative: "deploy_security_initiative"
+  az_deployment_type: "managementgroup"
+
+jobs:
+  initialise_vars:
+    runs-on: ubuntu-latest
+    outputs:
+      initiative_template: ${{ env.initiative_template }}
+      initiative_template_parameter: ${{ env.initiative_template_parameter }}
+      location: ${{ env.location }}
+      management_group_id: ${{ env.management_group_id }}
+      oidc_app_reg_client_id: ${{ env.oidc_app_reg_client_id }}
+      azure_tenant_id: ${{ env.azure_tenant_id }}
+      environment: ${{ env.environment }}
+      deployment_name_initiative: ${{ env.deployment_name_initiative }}
+      az_deployment_type: ${{ env.az_deployment_type }}
+      initiative_template_filename: ${{ steps.extract_filenames.outputs.initiative_template_filename }}
+    steps:
+      - name: Initialise Variables
+        run: echo "Initialising environment variables"
+
+      - name: Extract Filenames
+        id: extract_filenames
+        run: |
+          echo "initiative_template_filename=$(basename ${{ env.initiative_template }})" >> $GITHUB_OUTPUT
+
+  build_initiative:
+    needs: initialise_vars
+    permissions:
+      id-token: write
+      contents: read
+    uses: tw3lveparsecs/azure-iac-and-devops/.github/workflows/build_template.yml@main
+    with:
+      test_trigger: ${{ github.event_name }}
+      template_file_path: ${{ needs.initialise_vars.outputs.initiative_template }}
+      parameter_file_path: ${{ needs.initialise_vars.outputs.initiative_template_parameter }}
+      oidc_app_reg_client_id: ${{ needs.initialise_vars.outputs.oidc_app_reg_client_id }}
+      azure_tenant_id: ${{ needs.initialise_vars.outputs.azure_tenant_id }}
+      location: ${{ needs.initialise_vars.outputs.location }}
+      management_group_id: ${{ needs.initialise_vars.outputs.management_group_id }}
+      deployment_name: ${{ needs.initialise_vars.outputs.deployment_name_initiative }}
+      az_deployment_type: ${{ needs.initialise_vars.outputs.az_deployment_type }}
+
+  deploy_initiative:
+    needs: [initialise_vars, build_initiative]
+    if: ${{ github.ref == 'refs/heads/main' }}
+    permissions:
+      id-token: write
+      contents: read
+    uses: tw3lveparsecs/azure-iac-and-devops/.github/workflows/deploy_template.yml@main
+    with:
+      environment: ${{ needs.initialise_vars.outputs.environment }}
+      location: ${{ needs.initialise_vars.outputs.location }}
+      management_group_id: ${{ needs.initialise_vars.outputs.management_group_id }}
+      template_file_name: ${{ needs.initialise_vars.outputs.initiative_template_filename }}
+      deployment_name: ${{ needs.initialise_vars.outputs.deployment_name_initiative }}
+      oidc_app_reg_client_id: ${{ needs.initialise_vars.outputs.oidc_app_reg_client_id }}
+      azure_tenant_id: ${{ needs.initialise_vars.outputs.azure_tenant_id }}
+      az_deployment_type: ${{ needs.initialise_vars.outputs.az_deployment_type }}

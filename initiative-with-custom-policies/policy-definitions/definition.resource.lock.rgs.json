@@ -1,0 +1,76 @@
+{
+  "name": "resourceLockOnResourceGroups",
+  "displayName": "Deploy CanNotDelete Resource Lock on Resource Groups",
+  "description": "Creates a resource lock at the resource group level for preventing resource deletion.",
+  "metadata": {
+    "category": "Regulatory Compliance",
+    "version": "1.0.0"
+  },
+  "mode": "All",
+  "parameters": {
+    "rgNames": {
+      "type": "Array",
+      "metadata": {
+        "displayName": "Resource Groups names",
+        "description": "The list of RG that should have cannot delete resource lock, all resources will inherit the lock"
+      },
+      "defaultValue": [""]
+    },
+    "effect": {
+      "type": "String",
+      "metadata": {
+        "displayName": "Effect",
+        "description": "DeployIfNotExists, AuditIfNotExists or Disabled the execution of the Policy"
+      },
+      "allowedValues": ["DeployIfNotExists", "AuditIfNotExists", "Disabled"],
+      "defaultValue": "DeployIfNotExists"
+    }
+  },
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "type",
+          "equals": "Microsoft.Resources/subscriptions/resourceGroups"
+        },
+        {
+          "field": "name",
+          "in": "[parameters('rgNames')]"
+        }
+      ]
+    },
+    "then": {
+      "effect": "[parameters('effect')]",
+      "details": {
+        "type": "Microsoft.Authorization/locks",
+        "existenceCondition": {
+          "field": "Microsoft.Authorization/locks/level",
+          "equals": "CanNotDelete"
+        },
+        "roleDefinitionIds": [
+          "/providers/Microsoft.Authorization/roleDefinitions/28bf596f-4eb7-45ce-b5bc-6cf482fec137"
+        ],
+        "deployment": {
+          "properties": {
+            "mode": "incremental",
+            "template": {
+              "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+              "contentVersion": "1.0.0.0",
+              "resources": [
+                {
+                  "type": "Microsoft.Authorization/locks",
+                  "apiVersion": "2020-05-01",
+                  "name": "DenyDelete",
+                  "properties": {
+                    "level": "CanNotDelete",
+                    "notes": "Prevents deletion of resource group."
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
