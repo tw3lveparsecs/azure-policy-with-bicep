@@ -1,0 +1,24 @@
+// This file should always be updated to only contain the policy assignments that need to be remediated.
+[
+  // management group level example
+  {
+    "name": "Example Policy Remediation",
+    "managementGroup": "example-management-group-id",
+    "policyAssignmentId": "/providers/microsoft.management/managementgroups/example-management-group-id/providers/microsoft.authorization/policyassignments/example-policy-assignment",
+    "policyDefinitionReferenceId": "example-policy-definition-reference"
+  },
+  // subscription level example
+  {
+    "name": "Example Policy Remediation",
+    "subscriptionId": "example-subscription-id",
+    "policyAssignmentId": "/providers/microsoft.management/managementgroups/example-management-group-id/providers/microsoft.authorization/policyassignments/example-policy-assignment",
+    "policyDefinitionReferenceId": "example-policy-definition-reference"
+  },
+  // resource group level example
+  {
+    "name": "Example Policy Remediation",
+    "resourceGroup": "example-resource-group-name",
+    "policyAssignmentId": "/providers/microsoft.management/managementgroups/example-management-group-id/providers/microsoft.authorization/policyassignments/example-policy-assignment",
+    "policyDefinitionReferenceId": "example-policy-definition-reference"
+  }
+]

@@ -1,0 +1,63 @@
+name: Policy Remediations
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - policy-remediations.jsonc
+  pull_request:
+    branches:
+      - main
+    paths:
+      - policy-remediations.jsonc
+
+env:
+  script_file_path: policy-remediations.ps1 # file path to policy remediation script
+  script_parameter_file_path: policy-remediations.jsonc # file path to policy remediation script parameters
+  oidc_app_reg_client_id: "[APP REG CLIENT ID]" # client id of the azure application registration used to authenticate to azure using oidc, refer to https://learn.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation-create-trust?pivots=identity-wif-apps-methods-azp#github-actions
+  azure_tenant_id: "[AZURE AD TENANT ID]" # azure ad tenant/directory id
+  environment: "policy" # name of the github environment
+
+jobs:
+  initialise_vars:
+    runs-on: ubuntu-latest
+    outputs:
+      script_file_path: ${{ env.script_file_path }}
+      script_parameter_file_path: ${{ env.script_parameter_file_path }}
+      oidc_app_reg_client_id: ${{ env.oidc_app_reg_client_id }}
+      azure_tenant_id: ${{ env.azure_tenant_id }}
+      environment: ${{ env.environment }}
+    steps:
+      - name: Initialise Variables
+        run: echo "Initialising environment variables"
+
+  deploy:
+    needs: [initialise_vars]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      id-token: write
+      contents: read
+    environment:
+      name: ${{ needs.initialise_vars.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ needs.initialise_vars.outputs.oidc_app_reg_client_id }}
+          tenant-id: ${{ needs.initialise_vars.outputs.azure_tenant_id }}
+          allow-no-subscriptions: true
+          enable-AzPSSession: true
+
+      - name: Policy Remediation
+        uses: Azure/powershell@v2
+        with:
+          inlineScript: |
+            .\${{ needs.initialise_vars.outputs.script_file_path }} -remediationFile .\${{ needs.initialise_vars.outputs.script_parameter_file_path }}
+          azPSVersion: latest
+          failOnStandardError: true
